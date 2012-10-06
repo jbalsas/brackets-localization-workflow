@@ -1,0 +1,29 @@
+#locale-selector {
+    position:absolute; 
+    right:30px; 
+    width:60px; 
+    height:17px;
+    z-index:100;
+}
+
+#localization-workflow .close {
+    top: 8px;
+}
+
+#localization-results .missing {
+    background-color: #F5C6CF;
+}
+
+#localization-results .unused {
+    background-color: #F5DEC6;
+}
+
+#localization-results .untranslated {
+    background-color: #F2F5C6;
+}
+
+.strings-panel {
+    margin: 3px 3px 3px 3px;
+    border: 1px solid;
+    -webkit-border-radius: 3px;
+}
