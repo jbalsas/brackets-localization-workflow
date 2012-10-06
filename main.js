@@ -16,6 +16,10 @@ define(function (require, exports, module) {
     
     var SHOW_LOCALIZATION_STATUS = "localizationWorkflow.show";
 
+    var lineRegExp      = new RegExp('[^\r\n]+', 'g'),
+        entryKeyRegExp  = new RegExp('^(\\s*)"([^"]*)'),
+        entryDescRegExp = new RegExp('"([^"]*)([^:]*):\\s"([^"]*)');
+    
     var $localizationPanel,
         $localizationResults,
         $localeSelector;
@@ -28,9 +32,9 @@ define(function (require, exports, module) {
     function _parseStrings(text) {
         var data, strings = {};
         
-        text.match(/[^\r\n]+/g).forEach(function (line, index) {
-            if (/^(\s*)\"([^\"]*)/.test(line)) {
-                data = /"([^"]*)([^:]*):\s"([^"]*)/.exec(line);
+        text.match(lineRegExp).forEach(function (line, index) {
+            if (entryKeyRegExp.test(line)) {
+                data = entryDescRegExp.exec(line);
                 strings[data[1]] = {line: index, desc: data[3]};
             }
         });
@@ -47,7 +51,7 @@ define(function (require, exports, module) {
                     $row = $("<tr>").append($("<td>").html(key)).append($("<td>").html("The key is missing")).addClass("missing");
                     $localizationResults.append($row);
                 } else {
-                    if (localeStrings[key] === rootStrings[key]) {
+                    if (localeStrings[key].desc === rootStrings[key].desc) {
                         $row = $("<tr>").append($("<td>").html(key)).append($("<td>").html("The key is not translated")).addClass("untranslated");
                         $localizationResults.append($row);
                     }
@@ -63,8 +67,7 @@ define(function (require, exports, module) {
             }
         }
         
-        $localizationResults.find('tr').click( function(){
-          console.log($(this));
+        $localizationResults.find('tr').click(function () {
         });
     }
     
