@@ -6,6 +6,7 @@ define(function (require, exports, module) {
     
     var Commands                = brackets.getModule("command/Commands"),
         CommandManager          = brackets.getModule("command/CommandManager"),
+        ProjectManager          = brackets.getModule("project/ProjectManager"),
         EditorManager           = brackets.getModule("editor/EditorManager"),
         DocumentManager         = brackets.getModule("document/DocumentManager"),
         Menus                   = brackets.getModule("command/Menus"),
@@ -16,8 +17,9 @@ define(function (require, exports, module) {
         NativeFileSystem        = brackets.getModule("file/NativeFileSystem").NativeFileSystem,
         strings                 = brackets.getModule("i18n!nls/strings");
     
-    var SHOW_LOCALIZATION_STATUS = "localizationWorkflow.show";
-
+    var SHOW_LOCALIZATION_STATUS    = "localizationWorkflow.show";
+    var LOCALIZATION_FOLDER         = "nls";
+    
     var lineRegExp      = new RegExp('[^\r\n\f]+', 'g'),
         entryKeyRegExp  = new RegExp('^(\\s*)"([^"]*)'),
         entryDescRegExp = new RegExp('"([^"]*)([^:]*):\\s"([^"]*)');
@@ -26,8 +28,8 @@ define(function (require, exports, module) {
         $localizationResults,
         $localeSelector;
     
-    var stringsPath = FileUtils.getNativeBracketsDirectoryPath() + "/nls";
-    
+    var _projectLocalizationFolder;
+        
     var rootStrings = {};
     var localeStrings = {};
     
@@ -55,10 +57,13 @@ define(function (require, exports, module) {
         
         var key, $row;
         
+        // Clean results
+        $localizationResults.find("tr:gt(0)").remove();
+                    
         var _clickHandler = function (locale, entry) {
             return function () {
                 StatusBar.showBusyIndicator(true);
-                CommandManager.execute(Commands.FILE_OPEN, {fullPath: stringsPath + "/" + locale + "/strings.js"})
+                CommandManager.execute(Commands.FILE_OPEN, {fullPath: _projectLocalizationFolder + "/" + locale + "/strings.js"})
                     .done(function (doc) {
                         EditorManager.getCurrentFullEditor().setSelection(entry.start, entry.end);
                         StatusBar.hideBusyIndicator();
@@ -92,17 +97,16 @@ define(function (require, exports, module) {
         }
     }
     
-    function _handleShowLocalizationStatus() {
-        
+    function _analyzeLocaleStrings() {
         var fileEntry;
         
         // Do root locale analysis
-        fileEntry = new NativeFileSystem.FileEntry(stringsPath + "/root/strings.js");
+        fileEntry = new NativeFileSystem.FileEntry(_projectLocalizationFolder + "/root/strings.js");
         FileUtils.readAsText(fileEntry).done(function (text) {
             rootStrings = _parseStrings(text);
             
             // Do initial locale analysis
-            fileEntry = new NativeFileSystem.FileEntry(stringsPath + "/" + $localeSelector.val() + "/strings.js");
+            fileEntry = new NativeFileSystem.FileEntry(_projectLocalizationFolder + "/" + $localeSelector.val() + "/strings.js");
             FileUtils.readAsText(fileEntry).done(function (text) {
                 localeStrings = _parseStrings(text);
                 _compareLocales();
@@ -110,24 +114,71 @@ define(function (require, exports, module) {
         });
   
         $localeSelector.on("change", function () {
-            
-            // Clean results
-            $localizationResults.find("tr:gt(0)").remove();
-            
+
             // Do locale analysis
-            fileEntry = new NativeFileSystem.FileEntry(stringsPath + "/" + $localeSelector.val() + "/strings.js");
+            fileEntry = new NativeFileSystem.FileEntry(_projectLocalizationFolder + "/" + $localeSelector.val() + "/strings.js");
             FileUtils.readAsText(fileEntry).done(function (text) {
                 localeStrings = _parseStrings(text);
                 _compareLocales();
             });
         });
-
-        if (!$localizationPanel.is(":visible")) {
-            $localizationPanel.show();
-        } else {
-            $localizationPanel.hide();
-        }
+    }
+    
+    function _scanProjectLocales() {
         
+        var scanDeferred = $.Deferred();
+        
+        $localeSelector.empty();
+        
+        // Load codes for current existing locales
+        NativeFileSystem.requestNativeFileSystem(_projectLocalizationFolder, function (dirEntry) {
+            dirEntry.createReader().readEntries(function (entries) {
+
+                entries.forEach(function (entry) {
+                    if (entry.isDirectory) {
+                        var match = entry.name.match(/^([a-z]{2})(-[a-z]{2})?$/);
+                        
+                        if (match) {
+                            var language = entry.name,
+                                label = match[1];
+                            
+                            if (match[2]) {
+                                label += match[2].toUpperCase();
+                            }
+                            
+                            var $option = $("<option>")
+                                .text(label)
+                                .attr("value", language)
+                                .appendTo($localeSelector);
+                        }
+                    }
+                });
+                
+                scanDeferred.resolve();
+            });
+        });
+        
+        return scanDeferred.promise();
+    }
+    
+    function _resetLocalization() {
+        // Clean results
+        $localizationResults.find("tr:gt(0)").remove();
+    }
+    
+    function _initializeLocalization(projectPath) {
+        _projectLocalizationFolder = projectPath + LOCALIZATION_FOLDER;
+        _resetLocalization();
+        _scanProjectLocales().done(function () {
+            if ($localizationPanel.is(":visible")) {
+                _analyzeLocaleStrings();
+            }
+        });
+    }
+    
+    function _handleShowLocalizationStatus() {
+        _analyzeLocaleStrings();
+        $localizationPanel.show();
         EditorManager.resizeEditor();
     }
     
@@ -153,31 +204,11 @@ define(function (require, exports, module) {
         $localeSelector         = $("#locale-selector");
         $localizationResults    = $("#localization-results");
         
-        // Load codes for current existing locales
-        NativeFileSystem.requestNativeFileSystem(stringsPath, function (dirEntry) {
-            dirEntry.createReader().readEntries(function (entries) {
-
-                entries.forEach(function (entry) {
-                    if (entry.isDirectory) {
-                        var match = entry.name.match(/^([a-z]{2})(-[a-z]{2})?$/);
-                        
-                        if (match) {
-                            var language = entry.name,
-                                label = match[1];
-                            
-                            if (match[2]) {
-                                label += match[2].toUpperCase();
-                            }
-                            
-                            var $option = $("<option>")
-                                .text(label)
-                                .attr("value", language)
-                                .appendTo($localeSelector);
-                        }
-                    }
-                });
-            });
+        $(ProjectManager).on("projectOpen", function (event, projectRoot) {
+            _initializeLocalization(projectRoot.fullPath);
         });
+        
+        _initializeLocalization(ProjectManager.getProjectRoot().fullPath);
         
         // Register command
         var menu = Menus.getMenu(Menus.AppMenuBar.DEBUG_MENU);
