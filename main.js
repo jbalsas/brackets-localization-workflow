@@ -15,7 +15,7 @@ define(function (require, exports, module) {
         FileUtils               = brackets.getModule("file/FileUtils"),
         StatusBar               = brackets.getModule("widgets/StatusBar"),
         NativeFileSystem        = brackets.getModule("file/NativeFileSystem").NativeFileSystem,
-        strings                 = brackets.getModule("i18n!nls/strings");
+        Strings                 = require("i18n!nls/strings");
     
     var SHOW_LOCALIZATION_STATUS    = "localizationWorkflow.show";
     var LOCALIZATION_FOLDER         = "nls";
@@ -79,12 +79,12 @@ define(function (require, exports, module) {
         for (key in rootStrings) {
             if (rootStrings.hasOwnProperty(key)) {
                 if (localeStrings[key] === undefined) {
-                    $row = $("<tr>").append($("<td>").html(key)).append($("<td>").html("The key is missing")).addClass("missing");
+                    $row = $("<tr>").append($("<td>").html(key)).append($("<td>").html(Strings.MISSING_STRING_DESC)).addClass("missing");
                     $localizationResults.append($row);
                     $row.on("click", _clickHandler("root", rootStrings[key].start, rootStrings[key].end));
                 } else {
                     if (localeStrings[key].desc === rootStrings[key].desc) {
-                        $row = $("<tr>").append($("<td>").html(key)).append($("<td>").html("The key is not translated")).addClass("untranslated");
+                        $row = $("<tr>").append($("<td>").html(key)).append($("<td>").html(Strings.UNTRANSLATED_STRING_DESC)).addClass("untranslated");
                         $localizationResults.append($row);
                         $row.on("click", _clickHandler(_currentLocale, localeStrings[key].descStart, localeStrings[key].descEnd));
                     }
@@ -95,7 +95,7 @@ define(function (require, exports, module) {
         
         for (key in localeStrings) {
             if (localeStrings.hasOwnProperty(key)) {
-                $row = $("<tr>").append($("<td>").html(key)).append($("<td>").html("The key is not used anymore")).addClass("unused");
+                $row = $("<tr>").append($("<td>").html(key)).append($("<td>").html(Strings.UNUSED_STRING_DESC)).addClass("unused");
                 $localizationResults.append($row);
                 $row.on("click", _clickHandler(_currentLocale, localeStrings[key].start, localeStrings[key].end));
             }
@@ -203,7 +203,7 @@ define(function (require, exports, module) {
         EditorManager.resizeEditor();
     }
     
-    CommandManager.register("Show Localization Status", SHOW_LOCALIZATION_STATUS, _handleToggleLocalizationStatus);
+    CommandManager.register(Strings.SHOW_STATUS_CMD, SHOW_LOCALIZATION_STATUS, _handleToggleLocalizationStatus);
 
     // Load de CSS styles and initialize the HTML content
     ExtensionUtils.loadStyleSheet(module, "styles.css").done(function () {
@@ -216,7 +216,7 @@ define(function (require, exports, module) {
                             + ' </div>'
                             + ' <div class="table-container">'
                             + '     <table id="localization-results" class="condensed-table" style="table-layout: fixed; width: 100%">'
-                            + '         <tr><th>Key</th><th>Status</th></tr>'
+                            + '         <tr><th>' + Strings.STRING_HEADER + '</th><th>' + Strings.STATUS_HEADER + '</th></tr>'
                             + '     </table>'
                             + ' </div>'
                             + '</div>');
