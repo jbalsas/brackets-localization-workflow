@@ -183,13 +183,24 @@ define(function (require, exports, module) {
         });
     }
     
-    function _handleShowLocalizationStatus() {
-        _analyzeLocaleStrings();
-        $localizationPanel.show();
+    function _handleToggleLocalizationStatus() {
+        
+        if (!$localizationPanel.is(":visible")) {
+            _analyzeLocaleStrings();
+            
+            $localizationPanel.show();
+            $("#localization-workflow .close").one("click", function () { _handleToggleLocalizationStatus(); });
+        
+            CommandManager.get(SHOW_LOCALIZATION_STATUS).setChecked(true);
+        } else {
+            $localizationPanel.hide();
+            CommandManager.get(SHOW_LOCALIZATION_STATUS).setChecked(false);
+        }
+        
         EditorManager.resizeEditor();
     }
     
-    CommandManager.register("Show Localization Status", SHOW_LOCALIZATION_STATUS, _handleShowLocalizationStatus);
+    CommandManager.register("Show Localization Status", SHOW_LOCALIZATION_STATUS, _handleToggleLocalizationStatus);
 
     // Load de CSS styles and initialize the HTML content
     ExtensionUtils.loadStyleSheet(module, "styles.css").done(function () {
