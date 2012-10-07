@@ -44,11 +44,13 @@ define(function (require, exports, module) {
         while ((match = lineRegExp.exec(text)) !== null) {
             if (entryKeyRegExp.test(match)) {
                 var lineNum = StringUtils.offsetToLineNum(lines, match.index);
-                
+
                 data = entryDescRegExp.exec(match);
                 strings[data[1]] = {desc: data[3],
                                     start: {line: lineNum, ch: 0},
-                                    end: {line: lineNum, ch: match[0].length}};
+                                    end: {line: lineNum, ch: match[0].length},
+                                    descStart: {line: lineNum, ch: match[0].indexOf(data[3])},
+                                    descEnd: {line: lineNum, ch: match[0].indexOf(data[3]) + data[3].length}};
             }
         }
         
@@ -62,12 +64,12 @@ define(function (require, exports, module) {
         // Clean results
         $localizationResults.find("tr:gt(0)").remove();
                     
-        var _clickHandler = function (locale, entry) {
+        var _clickHandler = function (locale, selStart, selEnd) {
             return function () {
                 StatusBar.showBusyIndicator(true);
                 CommandManager.execute(Commands.FILE_OPEN, {fullPath: _projectLocalizationFolder + "/" + locale + "/strings.js"})
                     .done(function (doc) {
-                        EditorManager.getCurrentFullEditor().setSelection(entry.start, entry.end);
+                        EditorManager.getCurrentFullEditor().setSelection(selStart, selEnd);
                         StatusBar.hideBusyIndicator();
                     });
             };
@@ -78,12 +80,12 @@ define(function (require, exports, module) {
                 if (localeStrings[key] === undefined) {
                     $row = $("<tr>").append($("<td>").html(key)).append($("<td>").html("The key is missing")).addClass("missing");
                     $localizationResults.append($row);
-                    $row.on("click", _clickHandler("root", rootStrings[key]));
+                    $row.on("click", _clickHandler("root", rootStrings[key].start, rootStrings[key].end));
                 } else {
                     if (localeStrings[key].desc === rootStrings[key].desc) {
                         $row = $("<tr>").append($("<td>").html(key)).append($("<td>").html("The key is not translated")).addClass("untranslated");
                         $localizationResults.append($row);
-                        $row.on("click", _clickHandler($localeSelector.val(), localeStrings[key]));
+                        $row.on("click", _clickHandler($localeSelector.val(), localeStrings[key].descStart, localeStrings[key].descEnd));
                     }
                     delete localeStrings[key];
                 }
@@ -94,7 +96,7 @@ define(function (require, exports, module) {
             if (localeStrings.hasOwnProperty(key)) {
                 $row = $("<tr>").append($("<td>").html(key)).append($("<td>").html("The key is not used anymore")).addClass("unused");
                 $localizationResults.append($row);
-                $row.on("click", _clickHandler($localeSelector.val(), localeStrings[key]));
+                $row.on("click", _clickHandler($localeSelector.val(), localeStrings[key].start, localeStrings[key].end));
             }
         }
     }
@@ -173,7 +175,6 @@ define(function (require, exports, module) {
     }
     
     function _initializeLocalization(projectPath) {
-        console.log($localeSelector.val());
         _projectLocalizationFolder = projectPath + LOCALIZATION_FOLDER;
         _resetLocalization();
         _scanProjectLocales().done(function () {
