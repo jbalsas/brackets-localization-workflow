@@ -28,7 +28,9 @@ define(function (require, exports, module) {
         $localizationResults,
         $localeSelector;
     
-    var _projectLocalizationFolder;
+    var _projectLocalizationFolder,
+        _currentRootPath,
+        _currentLocalePath;
         
     var rootStrings = {};
     var localeStrings = {};
@@ -115,6 +117,8 @@ define(function (require, exports, module) {
   
         $localeSelector.on("change", function () {
 
+            _currentLocalePath = _projectLocalizationFolder + "/" + $localeSelector.val() + "/strings.js";
+            
             // Do locale analysis
             fileEntry = new NativeFileSystem.FileEntry(_projectLocalizationFolder + "/" + $localeSelector.val() + "/strings.js");
             FileUtils.readAsText(fileEntry).done(function (text) {
@@ -129,7 +133,7 @@ define(function (require, exports, module) {
         var scanDeferred = $.Deferred();
         
         $localeSelector.empty();
-        
+                
         // Load codes for current existing locales
         NativeFileSystem.requestNativeFileSystem(_projectLocalizationFolder, function (dirEntry) {
             dirEntry.createReader().readEntries(function (entries) {
@@ -154,6 +158,8 @@ define(function (require, exports, module) {
                     }
                 });
                 
+                _currentRootPath = _projectLocalizationFolder + "/root/strings.js";
+                _currentLocalePath = _projectLocalizationFolder + "/" + $localeSelector.val() + "/strings.js";
                 scanDeferred.resolve();
             });
         });
@@ -167,6 +173,7 @@ define(function (require, exports, module) {
     }
     
     function _initializeLocalization(projectPath) {
+        console.log($localeSelector.val());
         _projectLocalizationFolder = projectPath + LOCALIZATION_FOLDER;
         _resetLocalization();
         _scanProjectLocales().done(function () {
@@ -206,6 +213,12 @@ define(function (require, exports, module) {
         
         $(ProjectManager).on("projectOpen", function (event, projectRoot) {
             _initializeLocalization(projectRoot.fullPath);
+        });
+        
+        $(DocumentManager).on("documentSaved", function (event, document) {
+            if (document.file.fullPath === _currentRootPath || document.file.fullPath === _currentLocalePath) {
+                _analyzeLocaleStrings();
+            }
         });
         
         _initializeLocalization(ProjectManager.getProjectRoot().fullPath);
