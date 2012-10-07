@@ -30,6 +30,7 @@ define(function (require, exports, module) {
     
     var _projectLocalizationFolder,
         _currentRootPath,
+        _currentLocale,
         _currentLocalePath;
         
     var rootStrings = {};
@@ -85,7 +86,7 @@ define(function (require, exports, module) {
                     if (localeStrings[key].desc === rootStrings[key].desc) {
                         $row = $("<tr>").append($("<td>").html(key)).append($("<td>").html("The key is not translated")).addClass("untranslated");
                         $localizationResults.append($row);
-                        $row.on("click", _clickHandler($localeSelector.val(), localeStrings[key].descStart, localeStrings[key].descEnd));
+                        $row.on("click", _clickHandler(_currentLocale, localeStrings[key].descStart, localeStrings[key].descEnd));
                     }
                     delete localeStrings[key];
                 }
@@ -96,7 +97,7 @@ define(function (require, exports, module) {
             if (localeStrings.hasOwnProperty(key)) {
                 $row = $("<tr>").append($("<td>").html(key)).append($("<td>").html("The key is not used anymore")).addClass("unused");
                 $localizationResults.append($row);
-                $row.on("click", _clickHandler($localeSelector.val(), localeStrings[key].start, localeStrings[key].end));
+                $row.on("click", _clickHandler(_currentLocale, localeStrings[key].start, localeStrings[key].end));
             }
         }
     }
@@ -110,26 +111,14 @@ define(function (require, exports, module) {
             rootStrings = _parseStrings(text);
             
             // Do initial locale analysis
-            fileEntry = new NativeFileSystem.FileEntry(_projectLocalizationFolder + "/" + $localeSelector.val() + "/strings.js");
-            FileUtils.readAsText(fileEntry).done(function (text) {
-                localeStrings = _parseStrings(text);
-                _compareLocales();
-            });
-        });
-  
-        $localeSelector.on("change", function () {
-
-            _currentLocalePath = _projectLocalizationFolder + "/" + $localeSelector.val() + "/strings.js";
-            
-            // Do locale analysis
-            fileEntry = new NativeFileSystem.FileEntry(_projectLocalizationFolder + "/" + $localeSelector.val() + "/strings.js");
+            fileEntry = new NativeFileSystem.FileEntry(_projectLocalizationFolder + "/" + _currentLocale + "/strings.js");
             FileUtils.readAsText(fileEntry).done(function (text) {
                 localeStrings = _parseStrings(text);
                 _compareLocales();
             });
         });
     }
-    
+
     function _scanProjectLocales() {
         
         var scanDeferred = $.Deferred();
@@ -152,7 +141,7 @@ define(function (require, exports, module) {
                                 label += match[2].toUpperCase();
                             }
                             
-                            var $option = $("<option>")
+                            var $option = $("<li>")
                                 .text(label)
                                 .attr("value", language)
                                 .appendTo($localeSelector);
@@ -160,8 +149,21 @@ define(function (require, exports, module) {
                     }
                 });
                 
+                $("#locale-selector li").on("click", function (evt) {
+                    $("#locale-selector li.selected").removeClass("selected");
+
+                    _currentLocale = $(evt.target).addClass("selected").text();
+                    // Do locale analysis
+                    var fileEntry = new NativeFileSystem.FileEntry(_projectLocalizationFolder + "/" + _currentLocale + "/strings.js");
+                    FileUtils.readAsText(fileEntry).done(function (text) {
+                        localeStrings = _parseStrings(text);
+                        _compareLocales();
+                    });
+                });
+                
+                _currentLocale = $("#locale-selector li").first().addClass("selected").text();
                 _currentRootPath = _projectLocalizationFolder + "/root/strings.js";
-                _currentLocalePath = _projectLocalizationFolder + "/" + $localeSelector.val() + "/strings.js";
+                _currentLocalePath = _projectLocalizationFolder + "/" + _currentLocale + "/strings.js";
                 scanDeferred.resolve();
             });
         });
@@ -209,7 +211,7 @@ define(function (require, exports, module) {
         $('.content').append('<div id="localization-workflow" class="bottom-panel">'
                             + ' <div class="toolbar simple-toolbar-layout">'
                             + '     <div class="title">Localizaton workflow</div>'
-                            + '     <select id="locale-selector"/>'
+                            + '     <ul id="locale-selector" class="nav"/>'
                             + '     <a href="#" class="close">&times;</a>'
                             + ' </div>'
                             + ' <div class="table-container">'
