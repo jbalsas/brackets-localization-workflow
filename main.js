@@ -126,8 +126,8 @@ define(function (require, exports, module) {
         $localeSelector.empty();
                 
         // Load codes for current existing locales
-        NativeFileSystem.requestNativeFileSystem(_projectLocalizationFolder, function (dirEntry) {
-            dirEntry.createReader().readEntries(function (entries) {
+        NativeFileSystem.requestNativeFileSystem(_projectLocalizationFolder, function (fs) {
+            fs.root.createReader().readEntries(function (entries) {
 
                 entries.forEach(function (entry) {
                     if (entry.isDirectory) {
