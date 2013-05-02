@@ -238,7 +238,8 @@ define(function (require, exports, module) {
         _initializeLocalization(ProjectManager.getProjectRoot().fullPath);
         
         // Register command
-        var menu = Menus.getMenu(Menus.AppMenuBar.DEBUG_MENU);
-        menu.addMenuItem(SHOW_LOCALIZATION_STATUS, "", Menus.AFTER, "menu-view-sidebar");
+        var menu = Menus.getMenu(Menus.AppMenuBar.VIEW_MENU);
+        menu.addMenuDivider();
+        menu.addMenuItem(SHOW_LOCALIZATION_STATUS, "", Menus.LAST);
     });
 });
