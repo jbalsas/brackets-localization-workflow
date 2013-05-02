@@ -1,3 +1,24 @@
+#locale-status {
+    position: absolute;
+    margin-left: 10px;
+}
+
+#locale-status.good {
+    color: #28d000;
+}
+
+#locale-status.not-so-good {
+    color: #cfdd00;
+}
+
+#locale-status.warn {
+    color: #ef7a00;
+}
+
+#locale-status.bad {
+    color: #ea002d;
+}
+
 #locale-selector {
     position: absolute; 
     right: 30px;

@@ -39,8 +39,9 @@ define(function (require, exports, module) {
     function _parseStrings(text) {
         var data, strings = {};
         
-        var lines = StringUtils.getLines(text);
-        var match;
+        var lines = StringUtils.getLines(text),
+            matches = 0,
+            match;
         
         while ((match = lineRegExp.exec(text)) !== null) {
             if (entryKeyRegExp.test(match)) {
@@ -52,15 +53,23 @@ define(function (require, exports, module) {
                                     end: {line: lineNum, ch: match[0].length},
                                     descStart: {line: lineNum, ch: match[0].indexOf(data[3])},
                                     descEnd: {line: lineNum, ch: match[0].indexOf(data[3]) + data[3].length}};
+                
+                matches++;
             }
         }
-        
-        return strings;
+                
+        return {entries: strings, length: matches};
     }
     
     function _compareLocales() {
         
-        var key, $row;
+        var rootEntries         = rootStrings.entries,
+            numRootEntries      = rootStrings.length,
+            localeEntries       = localeStrings.entries,
+            numLocaleEntries    = localeStrings.length,
+            numUnusedEntries    = 0,
+            key,
+            $row;
         
         // Clean results
         $localizationResults.find("tr:gt(0)").remove();
@@ -76,30 +85,48 @@ define(function (require, exports, module) {
             };
         };
         
-        for (key in rootStrings) {
-            if (rootStrings.hasOwnProperty(key)) {
-                if (localeStrings[key] === undefined) {
+        for (key in rootEntries) {
+            if (rootEntries.hasOwnProperty(key)) {
+                if (localeEntries[key] === undefined) {
                     $row = $("<tr>").append($("<td>").html(key)).append($("<td>").html(Strings.MISSING_STRING_DESC)).addClass("missing");
                     $localizationResults.append($row);
-                    $row.on("click", _clickHandler("root", rootStrings[key].start, rootStrings[key].end));
+                    $row.on("click", _clickHandler("root", rootEntries[key].start, rootEntries[key].end));
                 } else {
-                    if (localeStrings[key].desc === rootStrings[key].desc) {
+                    if (localeEntries[key].desc === rootEntries[key].desc) {
                         $row = $("<tr>").append($("<td>").html(key)).append($("<td>").html(Strings.UNTRANSLATED_STRING_DESC)).addClass("untranslated");
                         $localizationResults.append($row);
-                        $row.on("click", _clickHandler(_currentLocale, localeStrings[key].descStart, localeStrings[key].descEnd));
+                        $row.on("click", _clickHandler(_currentLocale, localeEntries[key].descStart, localeEntries[key].descEnd));
                     }
-                    delete localeStrings[key];
+                    delete localeEntries[key];
                 }
             }
         }
         
-        for (key in localeStrings) {
-            if (localeStrings.hasOwnProperty(key)) {
+        for (key in localeEntries) {
+            if (localeEntries.hasOwnProperty(key)) {
                 $row = $("<tr>").append($("<td>").html(key)).append($("<td>").html(Strings.UNUSED_STRING_DESC)).addClass("unused");
                 $localizationResults.append($row);
-                $row.on("click", _clickHandler(_currentLocale, localeStrings[key].start, localeStrings[key].end));
+                $row.on("click", _clickHandler(_currentLocale, localeEntries[key].start, localeEntries[key].end));
+                
+                numUnusedEntries++;
             }
         }
+        
+        var localizationProgress = Math.floor(100 * (numLocaleEntries - numUnusedEntries) / numRootEntries),
+            $localeStatus = $("#locale-status"),
+            localizationProgressClass = "good";
+        
+        if (localizationProgress < 50) {
+            localizationProgressClass = "bad";
+        } else if (localizationProgress < 75) {
+            localizationProgressClass = "warn";
+        } else if (localizationProgress < 90) {
+            localizationProgressClass = "not-so-good";
+        }
+        
+        $localeStatus.text("(" + localizationProgress + "%)")
+            .removeClass()
+            .addClass(localizationProgressClass);
     }
     
     function _analyzeLocaleStrings() {
@@ -211,6 +238,7 @@ define(function (require, exports, module) {
         $('.content').append('<div id="localization-workflow" class="bottom-panel">'
                             + ' <div class="toolbar simple-toolbar-layout">'
                             + '     <div class="title">Localizaton workflow</div>'
+                            + '     <span id="locale-status"/>'
                             + '     <ul id="locale-selector" class="nav"/>'
                             + '     <a href="#" class="close">&times;</a>'
                             + ' </div>'
