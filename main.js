@@ -48,13 +48,16 @@ define(function (require, exports, module) {
                 var lineNum = StringUtils.offsetToLineNum(lines, match.index);
 
                 data = entryDescRegExp.exec(match);
-                strings[data[1]] = {desc: data[3],
-                                    start: {line: lineNum, ch: 0},
-                                    end: {line: lineNum, ch: match[0].length},
-                                    descStart: {line: lineNum, ch: match[0].indexOf(data[3])},
-                                    descEnd: {line: lineNum, ch: match[0].indexOf(data[3]) + data[3].length}};
                 
-                matches++;
+                if (data && data[1]) {
+                    strings[data[1]] = {desc: data[3],
+                                        start: {line: lineNum, ch: 0},
+                                        end: {line: lineNum, ch: match[0].length},
+                                        descStart: {line: lineNum, ch: match[0].indexOf(data[3])},
+                                        descEnd: {line: lineNum, ch: match[0].indexOf(data[3]) + data[3].length}};
+                    
+                    matches++;
+                }
             }
         }
                 
