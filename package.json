@@ -1,0 +1,11 @@
+{
+    "name": "brackets-localization-workflow",
+    "title": "Localization Workflow",
+    "description": "Analysis tool for a better project localization workflow.",
+    "homepage": "https://github.com/jbalsas/brackets-localization-workflow",
+    "version": "0.0.1",
+    "author": "Chema Balsas <jbalsas@gmail.com> (https://github.com/jbalsas)",
+    "engines": {
+        "brackets": ">=0.17.0"
+    }
+}
