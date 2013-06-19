@@ -29,6 +29,7 @@
 #locale-selector > li {
     padding-right: 5px;
     cursor: pointer;
+    float: left;
 }
 
 #locale-selector > li:hover {
