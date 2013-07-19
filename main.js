@@ -4,7 +4,8 @@
 define(function (require, exports, module) {
     'use strict';
     
-    var Commands                = brackets.getModule("command/Commands"),
+    var AppInit                 = brackets.getModule("utils/AppInit"),
+        Commands                = brackets.getModule("command/Commands"),
         CommandManager          = brackets.getModule("command/CommandManager"),
         ProjectManager          = brackets.getModule("project/ProjectManager"),
         EditorManager           = brackets.getModule("editor/EditorManager"),
@@ -266,11 +267,13 @@ define(function (require, exports, module) {
             }
         });
         
-        _initializeLocalization(ProjectManager.getProjectRoot().fullPath);
-        
         // Register command
         var menu = Menus.getMenu(Menus.AppMenuBar.VIEW_MENU);
         menu.addMenuDivider();
         menu.addMenuItem(SHOW_LOCALIZATION_STATUS, "", Menus.LAST);
+        
+        AppInit.htmlReady(function () {
+            _initializeLocalization(ProjectManager.getProjectRoot().fullPath);
+        });
     });
 });
