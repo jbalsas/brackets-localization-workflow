@@ -16,6 +16,7 @@ define(function (require, exports, module) {
         FileUtils               = brackets.getModule("file/FileUtils"),
         StatusBar               = brackets.getModule("widgets/StatusBar"),
         NativeFileSystem        = brackets.getModule("file/NativeFileSystem").NativeFileSystem,
+        FileIndexManager        = brackets.getModule("project/FileIndexManager"),
         Strings                 = require("i18n!nls/strings");
     
     var SHOW_LOCALIZATION_STATUS    = "localizationWorkflow.show";
@@ -208,11 +209,39 @@ define(function (require, exports, module) {
     }
     
     function _initializeLocalization(projectPath) {
-        _projectLocalizationFolder = projectPath + LOCALIZATION_FOLDER;
+        console.log("INIT");
+        var searchFor = "nls/strings.js",
+            baseDir;
+        
         _resetLocalization();
-        _scanProjectLocales().done(function () {
-            if ($localizationPanel.is(":visible")) {
-                _analyzeLocaleStrings();
+        
+        FileIndexManager.getFileInfoList("all").done(function (allFiles) {
+            var i = 0, shortest, shortestLen;
+            var filtered = allFiles.filter(function (item) {
+                return (item.fullPath.indexOf(searchFor) === item.fullPath.length - searchFor.length);
+            });
+            if (filtered.length === 1) {
+                baseDir = FileUtils.getDirectoryPath(filtered[0].fullPath);
+            } else if (filtered.length > 1) {
+                baseDir = filtered.reduce(function (a, b) {
+                    return a.fullPath.length < b.fullPath.length ? a : b;
+                });
+                baseDir = FileUtils.getDirectoryPath(baseDir.fullPath);
+            } else {
+                baseDir = filtered;
+            }
+        }).then(function () {
+            console.log(baseDir);
+            if (typeof baseDir === "string") {
+                _projectLocalizationFolder = baseDir;
+                _scanProjectLocales().done(function () {
+                    if ($localizationPanel.is(":visible")) {
+                        _analyzeLocaleStrings();
+                    }
+                });
+            } else {
+                // we need a better error handling (in this case: no nls folder was found) - maybe an error message in the Panel
+                console.log("Fail");
             }
         });
     }
