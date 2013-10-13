@@ -5,6 +5,9 @@
     "homepage": "https://github.com/jbalsas/brackets-localization-workflow",
     "version": "0.0.1",
     "author": "Chema Balsas <jbalsas@gmail.com> (https://github.com/jbalsas)",
+    "keywords": [
+        "localization", "internationalization", "i18n", "nls", "localisation", "internationalisation"
+    ],
     "engines": {
         "brackets": ">=0.17.0"
     }
