@@ -206,6 +206,26 @@ define(function (require, exports, module) {
     function _resetLocalization() {
         // Clean results
         $localizationResults.find("tr:gt(0)").remove();
+        $localeSelector.empty();
+    }
+    
+    function _searchBaseDir(fileList, searchFor) {
+        var baseDir,
+            filtered;
+        filtered = fileList.filter(function (item) {
+            return (item.fullPath.indexOf(searchFor) === item.fullPath.length - searchFor.length);
+        });
+        if (filtered.length === 1) {
+            baseDir = FileUtils.getDirectoryPath(filtered[0].fullPath);
+        } else if (filtered.length > 1) {
+            baseDir = filtered.reduce(function (a, b) {
+                return a.fullPath.length < b.fullPath.length ? a : b;
+            });
+            baseDir = FileUtils.getDirectoryPath(baseDir.fullPath);
+        } else {
+            baseDir = filtered;
+        }
+        return baseDir;
     }
     
     function _initializeLocalization(projectPath) {
@@ -213,21 +233,10 @@ define(function (require, exports, module) {
             baseDir;
         
         _resetLocalization();
+        //we should maybe add an indicator here that something is loading/the extension is busy
         
-        FileIndexManager.getFileInfoList("all").done(function (allFiles) {
-            var filtered = allFiles.filter(function (item) {
-                return (item.fullPath.indexOf(searchFor) === item.fullPath.length - searchFor.length);
-            });
-            if (filtered.length === 1) {
-                baseDir = FileUtils.getDirectoryPath(filtered[0].fullPath);
-            } else if (filtered.length > 1) {
-                baseDir = filtered.reduce(function (a, b) {
-                    return a.fullPath.length < b.fullPath.length ? a : b;
-                });
-                baseDir = FileUtils.getDirectoryPath(baseDir.fullPath);
-            } else {
-                baseDir = filtered;
-            }
+        FileIndexManager.getFileInfoList("all").done(function (fileList) {
+            baseDir = _searchBaseDir(fileList, searchFor);
         }).then(function () {
             if (typeof baseDir === "string") {
                 _projectLocalizationFolder = baseDir;
