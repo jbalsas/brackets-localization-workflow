@@ -209,7 +209,6 @@ define(function (require, exports, module) {
     }
     
     function _initializeLocalization(projectPath) {
-        console.log("INIT");
         var searchFor = "nls/strings.js",
             baseDir;
         
@@ -231,7 +230,6 @@ define(function (require, exports, module) {
                 baseDir = filtered;
             }
         }).then(function () {
-            console.log(baseDir);
             if (typeof baseDir === "string") {
                 _projectLocalizationFolder = baseDir;
                 _scanProjectLocales().done(function () {
