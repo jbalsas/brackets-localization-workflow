@@ -215,7 +215,6 @@ define(function (require, exports, module) {
         _resetLocalization();
         
         FileIndexManager.getFileInfoList("all").done(function (allFiles) {
-            var i = 0, shortest, shortestLen;
             var filtered = allFiles.filter(function (item) {
                 return (item.fullPath.indexOf(searchFor) === item.fullPath.length - searchFor.length);
             });
