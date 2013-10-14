@@ -62,3 +62,17 @@
     border: 1px solid;
     -webkit-border-radius: 3px;
 }
+
+tr.lang-entry.untranslated:hover .btn-ignore {
+    visibility: visible;
+}
+
+tr.lang-entry.ignored {
+    display: none;
+}
+
+.btn-ignore {
+    visibility: hidden;
+    margin-left: 5px;
+    margin-right: 10px;
+}

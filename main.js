@@ -1,23 +1,25 @@
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
-/*global define, brackets, $ */
+/*global define, brackets, $, Mustache */
 
 define(function (require, exports, module) {
     'use strict';
     
-    var AppInit                 = brackets.getModule("utils/AppInit"),
+    var DocumentManager         = brackets.getModule("document/DocumentManager"),
+        EditorManager           = brackets.getModule("editor/EditorManager"),
         Commands                = brackets.getModule("command/Commands"),
         CommandManager          = brackets.getModule("command/CommandManager"),
-        ProjectManager          = brackets.getModule("project/ProjectManager"),
-        EditorManager           = brackets.getModule("editor/EditorManager"),
-        DocumentManager         = brackets.getModule("document/DocumentManager"),
         Menus                   = brackets.getModule("command/Menus"),
+        FileUtils               = brackets.getModule("file/FileUtils"),
+        NativeFileSystem        = brackets.getModule("file/NativeFileSystem").NativeFileSystem,
+        PreferencesManager      = brackets.getModule("preferences/PreferencesManager"),
+        FileIndexManager        = brackets.getModule("project/FileIndexManager"),
+        ProjectManager          = brackets.getModule("project/ProjectManager"),
+        AppInit                 = brackets.getModule("utils/AppInit"),
         ExtensionUtils          = brackets.getModule("utils/ExtensionUtils"),
         StringUtils             = brackets.getModule("utils/StringUtils"),
-        FileUtils               = brackets.getModule("file/FileUtils"),
         StatusBar               = brackets.getModule("widgets/StatusBar"),
-        NativeFileSystem        = brackets.getModule("file/NativeFileSystem").NativeFileSystem,
-        FileIndexManager        = brackets.getModule("project/FileIndexManager"),
-        Strings                 = require("i18n!nls/strings");
+        Strings                 = require("i18n!nls/strings"),
+        LanguageKeyEntryTPL     = require("text!htmlContent/language-key-entry.html");
     
     var SHOW_LOCALIZATION_STATUS    = "localizationWorkflow.show";
     
@@ -29,13 +31,26 @@ define(function (require, exports, module) {
         $localizationResults,
         $localeSelector;
     
-    var _projectLocalizationFolder,
+    var _projectRoot,
+        _projectLocalizationFolder,
         _currentRootPath,
         _currentLocale,
         _currentLocalePath;
         
     var rootStrings = {};
     var localeStrings = {};
+    
+    /**
+     * @private
+     * @type {PreferenceStorage}
+     */
+    var _prefs = null;
+    
+    /**
+     * @private
+     * @type {PreferenceStorage}
+     */
+    var _projectPrefs = {};
     
     function _parseStrings(text) {
         var data, strings = {};
@@ -65,6 +80,20 @@ define(function (require, exports, module) {
         return {entries: strings, length: matches};
     }
     
+    function _clickHandler(locale, selStart, selEnd) {
+        StatusBar.showBusyIndicator(true);
+        CommandManager.execute(Commands.FILE_OPEN, {fullPath: _projectLocalizationFolder + "/" + locale + "/strings.js"})
+            .done(function (doc) {
+                EditorManager.getCurrentFullEditor().setSelection(selStart, selEnd);
+                StatusBar.hideBusyIndicator();
+            });
+    }
+    
+    function _ignoreLangEntry(locale, key) {
+        _projectPrefs[locale].ignored[key] = true;
+        _prefs.setValue(_projectRoot, _projectPrefs);
+    }
+    
     function _compareLocales() {
         
         var rootEntries         = rootStrings.entries,
@@ -77,29 +106,34 @@ define(function (require, exports, module) {
         
         // Clean results
         $localizationResults.find("tr:gt(0)").remove();
-                    
-        var _clickHandler = function (locale, selStart, selEnd) {
-            return function () {
-                StatusBar.showBusyIndicator(true);
-                CommandManager.execute(Commands.FILE_OPEN, {fullPath: _projectLocalizationFolder + "/" + locale + "/strings.js"})
-                    .done(function (doc) {
-                        EditorManager.getCurrentFullEditor().setSelection(selStart, selEnd);
-                        StatusBar.hideBusyIndicator();
-                    });
-            };
-        };
         
         for (key in rootEntries) {
             if (rootEntries.hasOwnProperty(key)) {
                 if (localeEntries[key] === undefined) {
-                    $row = $("<tr>").append($("<td>").html(key)).append($("<td>").html(Strings.MISSING_STRING_DESC)).addClass("missing");
+                    $row = $(Mustache.render(LanguageKeyEntryTPL, {
+                        desc: Strings.MISSING_STRING_DESC,
+                        key: key,
+                        sellocale: "root",
+                        state: "missing"
+                    }))
+                        .data("selstart", rootEntries[key].start)
+                        .data("selend", rootEntries[key].end);
+                    
                     $localizationResults.append($row);
-                    $row.on("click", _clickHandler("root", rootEntries[key].start, rootEntries[key].end));
                 } else {
                     if (localeEntries[key].desc === rootEntries[key].desc) {
-                        $row = $("<tr>").append($("<td>").html(key)).append($("<td>").html(Strings.UNTRANSLATED_STRING_DESC)).addClass("untranslated");
+                        var ignored = _projectPrefs[_currentLocale].ignored[key];
+                        
+                        $row = $(Mustache.render(LanguageKeyEntryTPL, {
+                            desc: Strings.UNTRANSLATED_STRING_DESC,
+                            key: key,
+                            sellocale: _currentLocale,
+                            state: "untranslated" + (ignored ? " ignored" : "")
+                        }))
+                            .data("selstart", localeEntries[key].descStart)
+                            .data("selend", localeEntries[key].descEnd);
+                        
                         $localizationResults.append($row);
-                        $row.on("click", _clickHandler(_currentLocale, localeEntries[key].descStart, localeEntries[key].descEnd));
                     }
                     delete localeEntries[key];
                 }
@@ -108,10 +142,16 @@ define(function (require, exports, module) {
         
         for (key in localeEntries) {
             if (localeEntries.hasOwnProperty(key)) {
-                $row = $("<tr>").append($("<td>").html(key)).append($("<td>").html(Strings.UNUSED_STRING_DESC)).addClass("unused");
-                $localizationResults.append($row);
-                $row.on("click", _clickHandler(_currentLocale, localeEntries[key].start, localeEntries[key].end));
+                $row = $(LanguageKeyEntryTPL, Mustache.render({
+                    desc: Strings.UNUSED_STRING_DESC,
+                    key: key,
+                    sellocale: _currentLocale,
+                    state: "unused"
+                }))
+                    .data("selstart", localeEntries[key].start)
+                    .data("selend", localeEntries[key].end);
                 
+                $localizationResults.append($row);
                 numUnusedEntries++;
             }
         }
@@ -176,10 +216,15 @@ define(function (require, exports, module) {
                                 .text(label)
                                 .attr("value", language)
                                 .appendTo($localeSelector);
+                            
+                            if (!_projectPrefs[label]) {
+                                _projectPrefs[label] = { ignored: {} };
+                            }
                         }
                     }
                 });
                 
+                console.log(_projectPrefs);
                 $("#locale-selector li").on("click", function (evt) {
                     $("#locale-selector li.selected").removeClass("selected");
 
@@ -271,6 +316,8 @@ define(function (require, exports, module) {
     // Load the CSS styles and initialize the HTML content
     ExtensionUtils.loadStyleSheet(module, "styles.css").done(function () {
         
+        _prefs = PreferencesManager.getPreferenceStorage(module);
+        
         $('.content').append('<div id="localization-workflow" class="bottom-panel">'
                             + ' <div class="toolbar simple-toolbar-layout">'
                             + '     <div class="title">Localizaton workflow</div>'
@@ -291,6 +338,8 @@ define(function (require, exports, module) {
         
         // as this is also triggered on loading the first project (startup), we should maybe use this instead of htmlReady/appReady
         $(ProjectManager).on("projectOpen", function (event, projectRoot) {
+            _projectRoot = projectRoot.fullPath;
+            _projectPrefs = _prefs.getValue(_projectRoot) || {};
             _initializeLocalization();
         });
         
@@ -298,6 +347,29 @@ define(function (require, exports, module) {
             if (document.file.fullPath === _currentRootPath || document.file.fullPath === _currentLocalePath) {
                 _analyzeLocaleStrings();
             }
+        });
+        
+        $localizationResults.delegate("tr.lang-entry", "click", function (event) {
+            var $target     = $(event.target),
+                $entry      = $(event.currentTarget),
+                locale      = $entry.data("sellocale"),
+                key         = $entry.data("key"),
+                selstart    = $entry.data("selstart"),
+                selend      = $entry.data("selend");
+            
+            if (!$target.hasClass("btn")) {
+                _clickHandler(locale, selstart, selend);
+            }
+        });
+        
+        $localizationResults.delegate("tr.lang-entry .btn-ignore", "click", function (event) {
+            var $btn        = $(event.currentTarget),
+                $entry      = $btn.closest("tr.lang-entry"),
+                locale      = $entry.data("sellocale"),
+                key         = $entry.data("key");
+            
+            $entry.addClass("ignored");
+            _ignoreLangEntry(locale, key);
         });
         
         // Register command
