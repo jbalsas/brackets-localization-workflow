@@ -209,28 +209,23 @@ define(function (require, exports, module) {
     }
     
     function _searchBaseDir(fileList) {
-        var baseDir,
-            filtered,
-            searchFor = "nls/root/strings.js";
+        var searchFor = "/nls/root/strings.js",
+            baseDir,
+            filtered;
         
         filtered = fileList.filter(function (item) {
-            return (item.fullPath.indexOf(searchFor) === item.fullPath.length - searchFor.length);
+            return (item.fullPath.indexOf(searchFor) === (item.fullPath.length - searchFor.length));
         });
         
-        if (filtered.length > 1) {
+        if (filtered.length) {
             baseDir = filtered.reduce(function (a, b) {
-                return a.fullPath.length < b.fullPath.length ? a.fullPath : b.fullPath;
+                if (!b) { return a; }
+                return (a.fullPath.length < b.fullPath.length ? a : b);
             });
+            
+            baseDir = baseDir.fullPath.replace(searchFor, "/nls");
         }
         
-        if (filtered.length === 1 || baseDir) {
-            if (baseDir === undefined) {
-                baseDir = filtered[0].fullPath;
-            }
-            baseDir = baseDir.substring(0, baseDir.length - 16); //extract the dir from the full path (delete "/root/strings.js")
-        } else {
-            baseDir = filtered;
-        }
         return baseDir;
     }
     
@@ -239,11 +234,9 @@ define(function (require, exports, module) {
         // we should maybe add an indicator here that something is loading/the extension is busy
         
         FileIndexManager.getFileInfoList("all").done(function (fileList) {
-            var baseDir;
-            baseDir = _searchBaseDir(fileList);
+            _projectLocalizationFolder = _searchBaseDir(fileList);
             
-            if (typeof baseDir === "string") {
-                _projectLocalizationFolder = baseDir;
+            if (_projectLocalizationFolder) {
                 _scanProjectLocales().done(function () {
                     if ($localizationPanel.is(":visible")) {
                         _analyzeLocaleStrings();
