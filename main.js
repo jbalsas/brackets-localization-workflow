@@ -16,10 +16,10 @@ define(function (require, exports, module) {
         FileUtils               = brackets.getModule("file/FileUtils"),
         StatusBar               = brackets.getModule("widgets/StatusBar"),
         NativeFileSystem        = brackets.getModule("file/NativeFileSystem").NativeFileSystem,
+        FileIndexManager        = brackets.getModule("project/FileIndexManager"),
         Strings                 = require("i18n!nls/strings");
     
     var SHOW_LOCALIZATION_STATUS    = "localizationWorkflow.show";
-    var LOCALIZATION_FOLDER         = "nls";
     
     var lineRegExp      = new RegExp('[^\r\n\f]+', 'g'),
         entryKeyRegExp  = new RegExp('^(\\s*)"([^"]*)'),
@@ -205,14 +205,53 @@ define(function (require, exports, module) {
     function _resetLocalization() {
         // Clean results
         $localizationResults.find("tr:gt(0)").remove();
+        $localeSelector.empty();
     }
     
-    function _initializeLocalization(projectPath) {
-        _projectLocalizationFolder = projectPath + LOCALIZATION_FOLDER;
+    function _searchBaseDir(fileList) {
+        var baseDir,
+            filtered,
+            searchFor = "nls/root/strings.js";
+        
+        filtered = fileList.filter(function (item) {
+            return (item.fullPath.indexOf(searchFor) === item.fullPath.length - searchFor.length);
+        });
+        
+        if (filtered.length > 1) {
+            baseDir = filtered.reduce(function (a, b) {
+                return a.fullPath.length < b.fullPath.length ? a.fullPath : b.fullPath;
+            });
+        }
+        
+        if (filtered.length === 1 || baseDir) {
+            if (baseDir === undefined) {
+                baseDir = filtered[0].fullPath;
+            }
+            baseDir = baseDir.substring(0, baseDir.length - 16); //extract the dir from the full path (delete "/root/strings.js")
+        } else {
+            baseDir = filtered;
+        }
+        return baseDir;
+    }
+    
+    function _initializeLocalization() {
         _resetLocalization();
-        _scanProjectLocales().done(function () {
-            if ($localizationPanel.is(":visible")) {
-                _analyzeLocaleStrings();
+        // we should maybe add an indicator here that something is loading/the extension is busy
+        
+        FileIndexManager.getFileInfoList("all").done(function (fileList) {
+            var baseDir;
+            baseDir = _searchBaseDir(fileList);
+            
+            if (typeof baseDir === "string") {
+                _projectLocalizationFolder = baseDir;
+                _scanProjectLocales().done(function () {
+                    if ($localizationPanel.is(":visible")) {
+                        _analyzeLocaleStrings();
+                    }
+                });
+            } else {
+                // we need a better error handling (in this case: no nls folder was found) - maybe an error message in the Panel
+                console.log("Fail");
             }
         });
     }
@@ -236,7 +275,7 @@ define(function (require, exports, module) {
     
     CommandManager.register(Strings.SHOW_STATUS_CMD, SHOW_LOCALIZATION_STATUS, _handleToggleLocalizationStatus);
 
-    // Load de CSS styles and initialize the HTML content
+    // Load the CSS styles and initialize the HTML content
     ExtensionUtils.loadStyleSheet(module, "styles.css").done(function () {
         
         $('.content').append('<div id="localization-workflow" class="bottom-panel">'
@@ -257,8 +296,9 @@ define(function (require, exports, module) {
         $localeSelector         = $("#locale-selector");
         $localizationResults    = $("#localization-results");
         
+        // as this is also triggered on loading the first project (startup), we should maybe use this instead of htmlReady/appReady
         $(ProjectManager).on("projectOpen", function (event, projectRoot) {
-            _initializeLocalization(projectRoot.fullPath);
+            _initializeLocalization();
         });
         
         $(DocumentManager).on("documentSaved", function (event, document) {
@@ -271,9 +311,5 @@ define(function (require, exports, module) {
         var menu = Menus.getMenu(Menus.AppMenuBar.VIEW_MENU);
         menu.addMenuDivider();
         menu.addMenuItem(SHOW_LOCALIZATION_STATUS, "", Menus.LAST);
-        
-        AppInit.htmlReady(function () {
-            _initializeLocalization(ProjectManager.getProjectRoot().fullPath);
-        });
     });
 });
