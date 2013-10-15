@@ -19,7 +19,8 @@ define(function (require, exports, module) {
         StringUtils             = brackets.getModule("utils/StringUtils"),
         StatusBar               = brackets.getModule("widgets/StatusBar"),
         Strings                 = require("i18n!nls/strings"),
-        LanguageKeyEntryTPL     = require("text!htmlContent/language-key-entry.html");
+        LanguageKeyEntryTPL     = require("text!htmlContent/language-key-entry.html"),
+        LocalizationPanelTPL    = require("text!htmlContent/localization-panel.html");
     
     var SHOW_LOCALIZATION_STATUS    = "localizationWorkflow.show";
     
@@ -89,8 +90,14 @@ define(function (require, exports, module) {
             });
     }
     
-    function _ignoreLangEntry(locale, key) {
-        _projectPrefs[locale].ignored[key] = true;
+    function _ignoreLangEntry(locale, key, ignore) {
+        
+        if (ignore) {
+            _projectPrefs[locale].ignored[key] = true;
+        } else {
+            delete _projectPrefs[locale].ignored[key];
+        }
+        
         _prefs.setValue(_projectRoot, _projectPrefs);
     }
     
@@ -127,7 +134,7 @@ define(function (require, exports, module) {
                         
                         $row = $(Mustache.render(LanguageKeyEntryTPL, {
                             desc: Strings.UNTRANSLATED_STRING_DESC,
-                            ignoreLabel: (ignored ? Strings.UNIGNORE : Strings.IGNORE),
+                            ignoreLabel: (ignored ? Strings.STOP_IGNORING : Strings.IGNORE),
                             key: key,
                             sellocale: _currentLocale,
                             state: "untranslated" + (ignored ? " ignored" : "")
@@ -321,20 +328,8 @@ define(function (require, exports, module) {
         
         _prefs = PreferencesManager.getPreferenceStorage(module);
         
-        $('.content').append('<div id="localization-workflow" class="bottom-panel">'
-                            + ' <div class="toolbar simple-toolbar-layout">'
-                            + '     <div class="title">Localizaton workflow</div>'
-                            + '     <span id="locale-status"/>'
-                            + '     <ul id="locale-selector" class="nav"/>'
-                            + '     <a href="#" class="close">&times;</a>'
-                            + ' </div>'
-                            + ' <div class="table-container">'
-                            + '     <table id="localization-results" class="condensed-table" style="table-layout: fixed; width: 100%">'
-                            + '         <tr><th>' + Strings.STRING_HEADER + '</th><th>' + Strings.STATUS_HEADER + '</th></tr>'
-                            + '     </table>'
-                            + ' </div>'
-                            + '</div>');
-                
+        $('.content').append(Mustache.render(LocalizationPanelTPL, {Strings: Strings}));
+        
         $localizationPanel      = $("#localization-workflow");
         $localeSelector         = $("#locale-selector");
         $localizationResults    = $("#localization-results");
@@ -365,14 +360,21 @@ define(function (require, exports, module) {
             }
         });
         
+        $localizationPanel.find("#showIgnored").on("click", function (event) {
+            $localizationResults.toggleClass("show-ignored");
+        });
+        
         $localizationResults.delegate("tr.lang-entry .btn-ignore", "click", function (event) {
             var $btn        = $(event.currentTarget),
                 $entry      = $btn.closest("tr.lang-entry"),
                 locale      = $entry.data("sellocale"),
-                key         = $entry.data("key");
+                key         = $entry.data("key"),
+                ignored     = $entry.hasClass("ignored"),
+                ignoreLabel = ignored ? Strings.IGNORE : Strings.STOP_IGNORING;
             
-            $entry.addClass("ignored");
-            _ignoreLangEntry(locale, key);
+            _ignoreLangEntry(locale, key, !ignored);
+            $btn.html(ignoreLabel);
+            $entry.toggleClass("ignored");
         });
         
         // Register command

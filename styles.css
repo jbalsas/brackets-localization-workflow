@@ -1,6 +1,6 @@
 #locale-status {
-    position: absolute;
     margin-left: 10px;
+    margin-right: 10px;
 }
 
 #locale-status.good {
@@ -22,8 +22,7 @@
 #locale-selector {
     position: absolute; 
     right: 30px;
-    margin-top: 2px;
-    left: auto;
+    top: 10px;
 }
 
 #locale-selector > li {
@@ -41,8 +40,13 @@
     text-decoration: underline;
 }
 
-#localization-workflow .close {
-    top: 8px;
+#localization-results {
+    table-layout: fixed;
+    width: 100%;
+}
+
+#localization-results th:first-child {
+    width: 100px;
 }
 
 #localization-results .missing {
@@ -69,6 +73,18 @@ tr.lang-entry.untranslated:hover .btn-ignore {
 
 tr.lang-entry.ignored {
     display: none;
+}
+
+.show-ignored tr.lang-entry.ignored {
+    display: table-row;
+}
+
+.show-ignored tr.lang-entry.ignored td {
+    opacity: 0.5;
+}
+
+.show-ignored tr.lang-entry.ignored td:first-child {
+    opacity: 1;
 }
 
 .btn-ignore {

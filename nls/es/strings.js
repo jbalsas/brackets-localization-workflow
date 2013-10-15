@@ -9,6 +9,7 @@ define({
     "UNUSED_STRING_DESC"        : "La cadena no se utiliza en el archivo principal",
     "UNTRANSLATED_STRING_DESC"  : "La cadena traducida y la original parecen iguales",
     
-    "IGNORE" : "Ignorar",
-    "UNIGNORE" : "Dejar de Ignorar"
+    "IGNORE"        : "Ignorar",
+    "STOP_IGNORING" : "Dejar de ignorar",
+    "SHOW_IGNORED"  : "Mostrar cadenas ignoradas"
 });
