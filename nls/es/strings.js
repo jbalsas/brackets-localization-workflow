@@ -7,5 +7,8 @@ define({
     "STATUS_HEADER"             : "Estado",
     "MISSING_STRING_DESC"       : "No se encuentra la cadena en el archivo de traducción",
     "UNUSED_STRING_DESC"        : "La cadena no se utiliza en el archivo principal",
-    "UNTRANSLATED_STRING_DESC"  : "La cadena traducida y la original parecen iguales"
+    "UNTRANSLATED_STRING_DESC"  : "La cadena traducida y la original parecen iguales",
+    
+    "IGNORE" : "Ignorar",
+    "UNIGNORE" : "Dejar de Ignorar"
 });

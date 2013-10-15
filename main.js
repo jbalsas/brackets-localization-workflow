@@ -112,6 +112,7 @@ define(function (require, exports, module) {
                 if (localeEntries[key] === undefined) {
                     $row = $(Mustache.render(LanguageKeyEntryTPL, {
                         desc: Strings.MISSING_STRING_DESC,
+                        ignoreLabel: Strings.IGNORE,
                         key: key,
                         sellocale: "root",
                         state: "missing"
@@ -126,6 +127,7 @@ define(function (require, exports, module) {
                         
                         $row = $(Mustache.render(LanguageKeyEntryTPL, {
                             desc: Strings.UNTRANSLATED_STRING_DESC,
+                            ignoreLabel: (ignored ? Strings.UNIGNORE : Strings.IGNORE),
                             key: key,
                             sellocale: _currentLocale,
                             state: "untranslated" + (ignored ? " ignored" : "")
@@ -144,6 +146,7 @@ define(function (require, exports, module) {
             if (localeEntries.hasOwnProperty(key)) {
                 $row = $(LanguageKeyEntryTPL, Mustache.render({
                     desc: Strings.UNUSED_STRING_DESC,
+                    ignoreLabel: Strings.IGNORE,
                     key: key,
                     sellocale: _currentLocale,
                     state: "unused"

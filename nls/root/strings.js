@@ -7,5 +7,8 @@ define({
     "STATUS_HEADER"             : "Status",
     "MISSING_STRING_DESC"       : "String not found in the locale file",
     "UNUSED_STRING_DESC"        : "String not used in the root file",
-    "UNTRANSLATED_STRING_DESC"  : "Locale and root strings appear to be the same"
+    "UNTRANSLATED_STRING_DESC"  : "Locale and root strings appear to be the same",
+    
+    "IGNORE"    : "Ignore",
+    "UNIGNORE"  : "Stop Ignoring"
 });
