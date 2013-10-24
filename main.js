@@ -234,7 +234,6 @@ define(function (require, exports, module) {
                     }
                 });
                 
-                console.log(_projectPrefs);
                 $("#locale-selector li").on("click", function (evt) {
                     $("#locale-selector li.selected").removeClass("selected");
 
