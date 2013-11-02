@@ -32,7 +32,29 @@
     opacity: 0.3;
 }
 
+#localization-workflow .error .alert.alert-error {
+    display: block;
+}
+
+#localization-workflow .alert.alert-error {
+    display: none;
+    background-color: #f2dede;
+    border-color: #eed3d7;
+    color: #b94a48;
+    font-size: 16px;
+    margin: 20px;
+    padding: 20px;
+}
+
 /* */
+
+#localization-workflow .error .table-container {
+    display: none;
+}
+
+#localization-workflow .error #locale-status {
+    display: none;
+}
 
 #locale-status {
     margin-left: 10px;
@@ -53,6 +75,10 @@
 
 #locale-status.bad {
     color: #ea002d;
+}
+
+#localization-workflow .error #locale-selector {
+    display: none;
 }
 
 #locale-selector {
@@ -101,6 +127,10 @@
     margin: 3px 3px 3px 3px;
     border: 1px solid;
     -webkit-border-radius: 3px;
+}
+
+#localization-workflow .error .show-ignored {
+    display: none;
 }
 
 tr.lang-entry.untranslated:hover .btn-ignore {

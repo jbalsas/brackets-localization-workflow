@@ -58,6 +58,11 @@ define(function (require, exports, module) {
         $localizationContent.toggleClass('loading', isBusy);
     }
 
+    function _setError(error) {
+        $localizationContent.toggleClass('error', error);
+        $localizationContent.find('.alert-error').html(error);
+    }
+
     function _parseStrings(text) {
         var data, strings = {};
         
@@ -206,6 +211,8 @@ define(function (require, exports, module) {
                 localeStrings = _parseStrings(text);
                 _compareLocales();
             });
+        }).fail(function (err) {
+            _setBusy(false);
         });
     }
 
@@ -270,6 +277,9 @@ define(function (require, exports, module) {
         // Clean results
         $localizationResults.find("tr:gt(0)").remove();
         $localeSelector.empty();
+
+        _setBusy(true);
+        _setError(false);
     }
     
     function _searchBaseDir(fileList) {
@@ -295,7 +305,6 @@ define(function (require, exports, module) {
     
     function _initializeLocalization() {
         _resetLocalization();
-        _setBusy(true);
         
         FileIndexManager.getFileInfoList("all").done(function (fileList) {
             _projectLocalizationFolder = _searchBaseDir(fileList);
@@ -307,9 +316,7 @@ define(function (require, exports, module) {
                     }
                 });
             } else {
-                // we need a better error handling (in this case: no nls folder was found) - maybe an error message in the Panel
-                console.log("Fail");
-
+                _setError(Strings.ERROR_NLS_FOLDER_NOT_FOUND);
                 _setBusy(false);
             }
         });

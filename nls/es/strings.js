@@ -11,5 +11,7 @@ define({
     
     "IGNORE"        : "Ignorar",
     "STOP_IGNORING" : "Dejar de ignorar",
-    "SHOW_IGNORED"  : "Mostrar cadenas ignoradas"
+    "SHOW_IGNORED"  : "Mostrar cadenas ignoradas",
+
+    "ERROR_NLS_FOLDER_NOT_FOUND" : "No se ha encontrado el archivo base para traducciones <em>nls/root/strings.js</em>"
 });

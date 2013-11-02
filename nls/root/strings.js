@@ -11,5 +11,7 @@ define({
     
     "IGNORE"        : "Ignore",
     "STOP_IGNORING" : "Stop Ignoring",
-    "SHOW_IGNORED"  : "Show Ignored Strings"
+    "SHOW_IGNORED"  : "Show Ignored Strings",
+
+    "ERROR_NLS_FOLDER_NOT_FOUND" : "A localization base file nls/root/strings.js could not be found"
 });
