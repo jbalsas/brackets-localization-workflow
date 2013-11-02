@@ -28,7 +28,8 @@ define(function (require, exports, module) {
         entryKeyRegExp  = new RegExp('^(\\s*)"([^"]*)'),
         entryDescRegExp = new RegExp('"([^"]*)([^:]*):\\s"([^"]*)');
     
-    var $localizationPanel,
+    var $localizationContent,
+        $localizationPanel,
         $localizationResults,
         $localeSelector;
     
@@ -53,6 +54,10 @@ define(function (require, exports, module) {
      */
     var _projectPrefs = {};
     
+    function _setBusy(isBusy) {
+        $localizationContent.toggleClass('loading', isBusy);
+    }
+
     function _parseStrings(text) {
         var data, strings = {};
         
@@ -181,11 +186,15 @@ define(function (require, exports, module) {
         $localeStatus.text("(" + localizationProgress + "%)")
             .removeClass()
             .addClass(localizationProgressClass);
+
+        _setBusy(false);
     }
     
     function _analyzeLocaleStrings() {
         var fileEntry;
         
+        _setBusy(true);
+
         // Do root locale analysis
         fileEntry = new NativeFileSystem.FileEntry(_projectLocalizationFolder + "/root/strings.js");
         FileUtils.readAsText(fileEntry).done(function (text) {
@@ -249,6 +258,7 @@ define(function (require, exports, module) {
                 _currentLocale = $("#locale-selector li").first().addClass("selected").text();
                 _currentRootPath = _projectLocalizationFolder + "/root/strings.js";
                 _currentLocalePath = _projectLocalizationFolder + "/" + _currentLocale + "/strings.js";
+
                 scanDeferred.resolve();
             });
         });
@@ -285,7 +295,7 @@ define(function (require, exports, module) {
     
     function _initializeLocalization() {
         _resetLocalization();
-        // we should maybe add an indicator here that something is loading/the extension is busy
+        _setBusy(true);
         
         FileIndexManager.getFileInfoList("all").done(function (fileList) {
             _projectLocalizationFolder = _searchBaseDir(fileList);
@@ -299,6 +309,8 @@ define(function (require, exports, module) {
             } else {
                 // we need a better error handling (in this case: no nls folder was found) - maybe an error message in the Panel
                 console.log("Fail");
+
+                _setBusy(false);
             }
         });
     }
@@ -330,6 +342,7 @@ define(function (require, exports, module) {
         $('.content').append(Mustache.render(LocalizationPanelTPL, {Strings: Strings}));
         
         $localizationPanel      = $("#localization-workflow");
+        $localizationContent    = $localizationPanel.find('.localization-content');
         $localeSelector         = $("#locale-selector");
         $localizationResults    = $("#localization-results");
         

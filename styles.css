@@ -1,3 +1,39 @@
+/* Common */
+
+.localization-content {
+    position: relative;
+}
+
+#localization-workflow .loading .spinner {
+    display: block
+}
+
+#localization-workflow .spinner {
+    display: none;
+    position: absolute;
+    z-index: 1000;
+    bottom: 50%;
+    left: 50%;
+}
+
+#localization-workflow .loading .muted-bg {
+    display: block;
+}
+
+#localization-workflow .muted-bg {
+    display: none;
+    position: absolute;
+    z-index: 1000;
+    height: 100%;
+    width: 100%;
+    bottom: 0;
+    left: 0;
+    background-color: #999;
+    opacity: 0.3;
+}
+
+/* */
+
 #locale-status {
     margin-left: 10px;
     margin-right: 10px;
