@@ -156,7 +156,7 @@ define(function (require, exports, module) {
         
         for (key in localeEntries) {
             if (localeEntries.hasOwnProperty(key)) {
-                $row = $(LanguageKeyEntryTPL, Mustache.render({
+                $row = $(Mustache.render(LanguageKeyEntryTPL, {
                     desc: Strings.UNUSED_STRING_DESC,
                     ignoreLabel: Strings.IGNORE,
                     key: key,
