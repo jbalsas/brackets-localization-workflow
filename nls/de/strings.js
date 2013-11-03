@@ -11,5 +11,7 @@ define({
     
     "IGNORE"        : "Ignorieren",
     "STOP_IGNORING" : "Nicht mehr ignorieren",
-    "SHOW_IGNORED"  : "Ignorierte Texte anzeigen"
+    "SHOW_IGNORED"  : "Ignorierte Texte anzeigen",
+    
+    "ERROR_NLS_FOLDER_NOT_FOUND" : "Es konnte keine Basis-Lokalisierungs-Datei nls/root/strings.js gefunden werden!"
 });
