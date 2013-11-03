@@ -3,7 +3,7 @@
     "title": "Localization Workflow",
     "description": "Analysis tool for a better project localization workflow.",
     "homepage": "https://github.com/jbalsas/brackets-localization-workflow",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "author": "Chema Balsas <jbalsas@gmail.com> (https://github.com/jbalsas)",
     "keywords": [
         "localization", "internationalization", "i18n", "nls", "localisation", "internationalisation"
