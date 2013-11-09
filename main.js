@@ -10,9 +10,8 @@ define(function (require, exports, module) {
         CommandManager          = brackets.getModule("command/CommandManager"),
         Menus                   = brackets.getModule("command/Menus"),
         FileUtils               = brackets.getModule("file/FileUtils"),
-        NativeFileSystem        = brackets.getModule("file/NativeFileSystem").NativeFileSystem,
+        FileSystem              = brackets.getModule("filesystem/FileSystem"),
         PreferencesManager      = brackets.getModule("preferences/PreferencesManager"),
-        FileIndexManager        = brackets.getModule("project/FileIndexManager"),
         ProjectManager          = brackets.getModule("project/ProjectManager"),
         AppInit                 = brackets.getModule("utils/AppInit"),
         ExtensionUtils          = brackets.getModule("utils/ExtensionUtils"),
@@ -201,12 +200,12 @@ define(function (require, exports, module) {
         _setBusy(true);
 
         // Do root locale analysis
-        fileEntry = new NativeFileSystem.FileEntry(_projectLocalizationFolder + "/root/strings.js");
+        fileEntry = FileSystem.getFileForPath(_projectLocalizationFolder + "/root/strings.js");
         FileUtils.readAsText(fileEntry).done(function (text) {
             rootStrings = _parseStrings(text);
             
             // Do initial locale analysis
-            fileEntry = new NativeFileSystem.FileEntry(_projectLocalizationFolder + "/" + _currentLocale + "/strings.js");
+            fileEntry = FileSystem.getFileForPath(_projectLocalizationFolder + "/" + _currentLocale + "/strings.js");
             FileUtils.readAsText(fileEntry).done(function (text) {
                 localeStrings = _parseStrings(text);
                 _compareLocales();
@@ -223,8 +222,8 @@ define(function (require, exports, module) {
         $localeSelector.empty();
                 
         // Load codes for current existing locales
-        NativeFileSystem.requestNativeFileSystem(_projectLocalizationFolder, function (fs) {
-            fs.root.createReader().readEntries(function (entries) {
+        FileSystem.resolve(_projectLocalizationFolder, function (err, fs) {
+            fs.getContents(function (err, entries) {
 
                 entries.forEach(function (entry) {
                     if (entry.isDirectory) {
@@ -255,7 +254,7 @@ define(function (require, exports, module) {
 
                     _currentLocale = $(evt.target).addClass("selected").text();
                     // Do locale analysis
-                    var fileEntry = new NativeFileSystem.FileEntry(_projectLocalizationFolder + "/" + _currentLocale + "/strings.js");
+                    var fileEntry = FileSystem.getFileForPath(_projectLocalizationFolder + "/" + _currentLocale + "/strings.js");
                     FileUtils.readAsText(fileEntry).done(function (text) {
                         localeStrings = _parseStrings(text);
                         _compareLocales();
@@ -306,7 +305,7 @@ define(function (require, exports, module) {
     function _initializeLocalization() {
         _resetLocalization();
         
-        FileIndexManager.getFileInfoList("all").done(function (fileList) {
+        ProjectManager.getAllFiles().done(function (fileList) {
             _projectLocalizationFolder = _searchBaseDir(fileList);
             
             if (_projectLocalizationFolder) {
